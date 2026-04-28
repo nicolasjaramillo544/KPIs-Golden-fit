@@ -1,0 +1,341 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #020917; color: white; font-family: 'DM Mono', 'Courier New', monospace; min-height: 100vh; }
+  input, textarea, select { color-scheme: dark; }
+  input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: #0f172a; } ::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 2px; }
+  .fade-in { animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .btn-tab { padding: 7px 16px; border-radius: 8px; border: none; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; transition: all 0.2s; }
+  .btn-tab.active { background: #1d4ed8; color: white; }
+  .btn-tab:not(.active) { background: transparent; color: #64748b; }
+  .btn-tab:not(.active):hover { color: #94a3b8; }
+  .kpi-card { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 16px; padding: 18px 16px; display: flex; flex-direction: column; gap: 10px; transition: box-shadow 0.3s; }
+  .inp { width: 100%; background: #0f172a; border: 1px solid #1e3a5f; border-radius: 8px; color: white; padding: 8px 10px; font-family: 'DM Mono', monospace; font-size: 13px; outline: none; transition: border-color 0.2s; }
+  .inp:focus { border-color: #3b82f6; }
+  .inp-wrap { display: flex; flex-direction: column; gap: 4px; }
+  .inp-label { font-size: 10px; color: #64748b; letter-spacing: 1px; text-transform: uppercase; }
+  .save-btn { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #1d4ed8; color: white; font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.3s; letter-spacing: 1px; }
+  .save-btn:hover { background: #2563eb; }
+  .save-btn.saved { background: #15803d; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div style="background: linear-gradient(90deg,#0a1628 0%,#0d2045 50%,#0a1628 100%); border-bottom: 1px solid #1e3a5f; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+  <div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;"></div>
+      <span style="font-size:18px;font-weight:900;letter-spacing:2px;">GOLDEN FIT</span>
+      <span style="font-size:11px;color:#3b82f6;background:#1d4ed822;padding:2px 8px;border-radius:4px;">S.A.S.</span>
+    </div>
+    <div style="font-size:10px;color:#475569;margin-top:2px;letter-spacing:1px;">PANEL DE CONTROL · KPIs OPERATIVOS</div>
+  </div>
+  <div style="font-size:10px;color:#475569;">Buriticá, Antioquia</div>
+</div>
+
+<div style="padding:18px;max-width:900px;margin:0 auto;">
+  <!-- Tabs -->
+  <div style="display:flex;gap:4px;margin-bottom:18px;background:#0f172a;padding:4px;border-radius:10px;width:fit-content;">
+    <button class="btn-tab active" onclick="showView('dashboard')">Dashboard</button>
+    <button class="btn-tab" onclick="showView('register')">Registrar Mes</button>
+    <button class="btn-tab" onclick="showView('history')">Historial</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="view-dashboard" class="fade-in">
+    <div id="no-data-msg" style="text-align:center;padding:40px;color:#475569;background:#0f172a;border-radius:16px;margin-bottom:20px;">
+      <div style="font-size:28px;margin-bottom:8px;">📊</div>
+      <div style="font-weight:700;margin-bottom:4px;">Sin datos aún</div>
+      <div style="font-size:11px;">Ve a "Registrar Mes" para ingresar los primeros datos.</div>
+    </div>
+    <div id="dashboard-content" style="display:none;">
+      <div id="last-label" style="font-size:10px;color:#475569;margin-bottom:12px;letter-spacing:1px;"></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-bottom:18px;" id="kpi-grid"></div>
+      <div id="trend-section" style="display:none;background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:16px;margin-bottom:12px;">
+        <div style="font-size:10px;color:#64748b;letter-spacing:1px;margin-bottom:14px;text-transform:uppercase;">Tendencia histórica</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" id="charts-grid"></div>
+      </div>
+      <div id="notes-box" style="display:none;background:#0f172a;border:1px solid #1e3a5f;border-radius:12px;padding:12px 16px;">
+        <div style="font-size:9px;color:#475569;letter-spacing:1px;margin-bottom:4px;">NOTAS DEL MES</div>
+        <div id="notes-text" style="font-size:12px;color:#94a3b8;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REGISTER -->
+  <div id="view-register" style="display:none;" class="fade-in">
+    <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center;">
+      <span style="font-size:10px;color:#64748b;letter-spacing:1px;">MES:</span>
+      <div id="month-btns" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
+      <select id="year-sel" style="background:#1e293b;border:none;color:white;border-radius:6px;padding:4px 8px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;">
+        <option>2026</option><option>2027</option><option>2028</option>
+      </select>
+    </div>
+    <div style="background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:18px;">
+      <div id="reg-label" style="font-size:10px;color:#3b82f6;letter-spacing:1px;margin-bottom:14px;"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div class="inp-wrap"><label class="inp-label">Usuarios activos</label><input class="inp" id="f-ua" type="number" placeholder="Ej: 45"></div>
+        <div class="inp-wrap"><label class="inp-label">Usuarios nuevos</label><input class="inp" id="f-un" type="number" placeholder="Ej: 12"></div>
+        <div class="inp-wrap"><label class="inp-label">Usuarios que se fueron</label><input class="inp" id="f-uf" type="number" placeholder="Ej: 5"></div>
+        <div class="inp-wrap"><label class="inp-label">Ingresos mensuales (COP)</label><input class="inp" id="f-ing" type="number" placeholder="Ej: 5000000"></div>
+        <div class="inp-wrap"><label class="inp-label">Asistencia promedio (ses/sem)</label><input class="inp" id="f-asi" type="number" step="0.1" placeholder="Ej: 2.5"></div>
+        <div class="inp-wrap"><label class="inp-label">Satisfacción (%)</label><input class="inp" id="f-sat" type="number" placeholder="Ej: 80"></div>
+      </div>
+      <div id="calc-preview" style="display:none;display:flex;gap:10px;margin-bottom:12px;"></div>
+      <div class="inp-wrap" style="margin-bottom:14px;">
+        <label class="inp-label">Notas del mes</label>
+        <textarea class="inp" id="f-notas" placeholder="Eventos relevantes, novedades, observaciones..." style="resize:vertical;min-height:55px;"></textarea>
+      </div>
+      <button class="save-btn" id="save-btn" onclick="saveMonth()">GUARDAR MES</button>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="view-history" style="display:none;" class="fade-in">
+    <div id="history-list"></div>
+  </div>
+
+  <!-- Metas footer -->
+  <div style="margin-top:16px;background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:12px 16px;">
+    <div style="font-size:9px;color:#475569;letter-spacing:1px;margin-bottom:6px;">METAS GOLDEN FIT</div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;">
+      <span style="font-size:9px;"><span style="color:#475569;">Usuarios activos: </span><span style="color:#94a3b8;font-weight:700;">80 (mes 3)</span></span>
+      <span style="font-size:9px;"><span style="color:#475569;">Retención: </span><span style="color:#94a3b8;font-weight:700;">≥70%</span></span>
+      <span style="font-size:9px;"><span style="color:#475569;">Deserción: </span><span style="color:#94a3b8;font-weight:700;">≤20%</span></span>
+      <span style="font-size:9px;"><span style="color:#475569;">Ingresos: </span><span style="color:#94a3b8;font-weight:700;">$8M COP (mes 4)</span></span>
+      <span style="font-size:9px;"><span style="color:#475569;">Asistencia: </span><span style="color:#94a3b8;font-weight:700;">≥3 ses/sem</span></span>
+      <span style="font-size:9px;"><span style="color:#475569;">Satisfacción: </span><span style="color:#94a3b8;font-weight:700;">≥85%</span></span>
+    </div>
+  </div>
+</div>
+
+<script>
+const MONTHS = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+const METAS = { ua:80, ing:8000000, asi:3, sat:85, ret:70, des:20 };
+let selMonth = new Date().getMonth();
+let selYear = 2026;
+let history = [];
+
+try { history = JSON.parse(localStorage.getItem('gf_kpis_v3') || '[]'); } catch {}
+
+function save() { try { localStorage.setItem('gf_kpis_v3', JSON.stringify(history)); } catch {} }
+
+function statusColor(val, meta, inv=false) {
+  const p = val/meta;
+  if(inv) { if(p<=0.7) return "#22c55e"; if(p<=1) return "#f59e0b"; return "#ef4444"; }
+  if(p>=1) return "#22c55e"; if(p>=0.7) return "#f59e0b"; return "#ef4444";
+}
+
+function calcRet(h) {
+  const ua = parseFloat(h.ua)||0, uf = parseFloat(h.uf)||0;
+  return ua>0 ? Math.round(((ua-uf)/ua)*100) : 0;
+}
+function calcDes(h) {
+  const ua = parseFloat(h.ua)||0, uf = parseFloat(h.uf)||0;
+  return ua>0 ? Math.round((uf/ua)*100) : 0;
+}
+
+function pct(val, meta) { return Math.min(100, Math.round((parseFloat(val)||0)/meta*100)); }
+
+function arcSVG(val, meta, color) {
+  const v = Math.min(parseFloat(val)||0, meta);
+  const p = v/meta;
+  const r=36, circ=2*Math.PI*r;
+  const dash = p*circ*0.75;
+  const gap = circ-dash;
+  const display = parseFloat(val)>0 ? val : '—';
+  return `<svg width="72" height="72" viewBox="0 0 100 100">
+    <circle cx="50" cy="50" r="${r}" fill="none" stroke="#1e293b" stroke-width="8"
+      stroke-dasharray="${circ*0.75} ${circ*0.25}" stroke-linecap="round" transform="rotate(135 50 50)"/>
+    <circle cx="50" cy="50" r="${r}" fill="none" stroke="${color}" stroke-width="8"
+      stroke-dasharray="${dash} ${gap+circ*0.25}" stroke-linecap="round" transform="rotate(135 50 50)"
+      style="transition:stroke-dasharray 0.8s"/>
+    <text x="50" y="55" text-anchor="middle" fill="white" font-size="16" font-weight="800" font-family="'DM Mono',monospace">${display}</text>
+  </svg>`;
+}
+
+function barHTML(p, color) {
+  return `<div style="background:#1e293b;border-radius:99px;height:6px;overflow:hidden;">
+    <div style="height:100%;border-radius:99px;width:${p}%;background:${color};transition:width 0.7s;"></div>
+  </div>`;
+}
+
+function kpiCardHTML(label, displayVal, meta, metaLabel, color, useArc=false, p) {
+  return `<div class="kpi-card" style="border:1px solid ${color}33;box-shadow:0 0 20px ${color}11;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div style="font-size:10px;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;">${label}</div>
+      <div style="font-size:9px;padding:2px 8px;border-radius:99px;background:${color}22;color:${color};font-weight:700;">${p}%</div>
+    </div>
+    ${useArc ? `<div style="display:flex;align-items:center;gap:12px;">${arcSVG(displayVal,meta,color)}<div><div style="font-size:22px;font-weight:800;color:white;">${displayVal}</div><div style="font-size:10px;color:#64748b;">Meta: ${metaLabel}</div></div></div>`
+    : `<div><div style="font-size:26px;font-weight:800;color:white;margin-bottom:4px;">${displayVal}</div><div style="font-size:10px;color:#64748b;margin-bottom:8px;">Meta: ${metaLabel}</div>${barHTML(p,color)}</div>`}
+  </div>`;
+}
+
+function renderDashboard() {
+  const last = history.length>0 ? history[history.length-1] : null;
+  const noData = document.getElementById('no-data-msg');
+  const content = document.getElementById('dashboard-content');
+  if(!last){ noData.style.display='block'; content.style.display='none'; return; }
+  noData.style.display='none'; content.style.display='block';
+  document.getElementById('last-label').textContent = `ÚLTIMO REGISTRO: ${MONTHS[last.month]} ${last.year}`;
+  const ret = calcRet(last), des = calcDes(last);
+  const ing = parseFloat(last.ing)||0;
+  const ingDisplay = ing>0 ? `$${(ing/1000000).toFixed(1)}M` : '—';
+  const asi = parseFloat(last.asi)||0;
+  const sat = parseFloat(last.sat)||0;
+  const ua = parseFloat(last.ua)||0;
+  const cards = [
+    kpiCardHTML("Usuarios activos", ua>0?ua:'—', METAS.ua, "80 usuarios", "#3b82f6", true, pct(ua,METAS.ua)),
+    kpiCardHTML("Ingresos mensuales", ingDisplay, METAS.ing, "$8M COP", "#22c55e", false, pct(ing,METAS.ing)),
+    kpiCardHTML("Asistencia promedio", asi>0?`${asi}/sem`:'—', METAS.asi, "3 ses/sem", "#f59e0b", false, pct(asi,METAS.asi)),
+    kpiCardHTML("Satisfacción", sat>0?`${sat}%`:'—', METAS.sat, "85%", "#8b5cf6", false, pct(sat,METAS.sat)),
+    kpiCardHTML("Tasa de retención", `${ret}%`, METAS.ret, "70%", "#06b6d4", false, pct(ret,METAS.ret)),
+    kpiCardHTML("Tasa de deserción", `${des}%`, METAS.des, "≤20%", des<=20?"#22c55e":"#ef4444", false, pct(des,METAS.des)),
+  ];
+  document.getElementById('kpi-grid').innerHTML = cards.join('');
+  // trends
+  const trend = document.getElementById('trend-section');
+  if(history.length>1){
+    trend.style.display='block';
+    const fields=[{label:'Usuarios activos',key:'ua',color:'#3b82f6'},{label:'Ingresos (M COP)',key:'ing',color:'#22c55e'},{label:'Asistencia prom.',key:'asi',color:'#f59e0b'},{label:'Satisfacción %',key:'sat',color:'#8b5cf6'}];
+    document.getElementById('charts-grid').innerHTML = fields.map(({label,key,color})=>{
+      const vals = history.map(h=>parseFloat(h[key])||0);
+      const max=Math.max(...vals,1); const w=160,h=40;
+      const pts=vals.map((v,i)=>`${(i/(vals.length-1||1))*w},${h-(v/max)*h}`).join(' ');
+      const dots=vals.map((v,i)=>`<circle cx="${(i/(vals.length-1||1))*w}" cy="${h-(v/max)*h}" r="3" fill="${color}"/>`).join('');
+      return `<div><div style="font-size:9px;color:#475569;margin-bottom:6px;letter-spacing:0.5px;">${label.toUpperCase()}</div>
+        <svg width="${w}" height="${h}" style="overflow:visible;"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>${dots}</svg></div>`;
+    }).join('');
+  } else { trend.style.display='none'; }
+  const notesBox=document.getElementById('notes-box');
+  if(last.notas){ notesBox.style.display='block'; document.getElementById('notes-text').textContent=last.notas; }
+  else notesBox.style.display='none';
+}
+
+function renderMonthBtns(){
+  document.getElementById('month-btns').innerHTML = MONTHS.map((m,i)=>
+    `<button onclick="selMonth=${i};renderMonthBtns();loadForm();" style="padding:4px 10px;border-radius:6px;border:none;cursor:pointer;background:${i===selMonth?'#1d4ed8':'#1e293b'};color:${i===selMonth?'white':'#64748b'};font-family:'DM Mono',monospace;font-size:10px;font-weight:700;">${m}</button>`
+  ).join('');
+}
+
+function loadForm(){
+  const existing = history.find(h=>h.month===selMonth&&h.year===selYear);
+  document.getElementById('f-ua').value = existing?existing.ua:'';
+  document.getElementById('f-un').value = existing?existing.un:'';
+  document.getElementById('f-uf').value = existing?existing.uf:'';
+  document.getElementById('f-ing').value = existing?existing.ing:'';
+  document.getElementById('f-asi').value = existing?existing.asi:'';
+  document.getElementById('f-sat').value = existing?existing.sat:'';
+  document.getElementById('f-notas').value = existing?existing.notas:'';
+  const lbl = `REGISTRANDO: ${MONTHS[selMonth].toUpperCase()} ${selYear}${existing?' · EDITANDO REGISTRO EXISTENTE':''}`;
+  document.getElementById('reg-label').textContent=lbl;
+  if(existing) document.getElementById('reg-label').style.color='#f59e0b';
+  else document.getElementById('reg-label').style.color='#3b82f6';
+  updateCalcPreview();
+}
+
+function updateCalcPreview(){
+  const ua=parseFloat(document.getElementById('f-ua').value)||0;
+  const uf=parseFloat(document.getElementById('f-uf').value)||0;
+  if(ua>0||uf>0){
+    const ret=ua>0?Math.round(((ua-uf)/ua)*100):0;
+    const des=ua>0?Math.round((uf/ua)*100):0;
+    const retC=ret>=70?'#22c55e':'#ef4444', desC=des<=20?'#22c55e':'#ef4444';
+    document.getElementById('calc-preview').style.display='flex';
+    document.getElementById('calc-preview').innerHTML=`
+      <div style="background:#020917;border:1px solid ${retC}44;border-radius:8px;padding:8px 14px;flex:1;">
+        <div style="font-size:9px;color:#475569;letter-spacing:1px;">RETENCIÓN CALCULADA</div>
+        <div style="font-size:20px;font-weight:800;color:${retC};">${ret}%</div>
+      </div>
+      <div style="background:#020917;border:1px solid ${desC}44;border-radius:8px;padding:8px 14px;flex:1;">
+        <div style="font-size:9px;color:#475569;letter-spacing:1px;">DESERCIÓN CALCULADA</div>
+        <div style="font-size:20px;font-weight:800;color:${desC};">${des}%</div>
+      </div>`;
+  } else { document.getElementById('calc-preview').style.display='none'; }
+}
+
+['f-ua','f-uf'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input',updateCalcPreview); });
+document.getElementById('year-sel').addEventListener('change',function(){ selYear=parseInt(this.value); loadForm(); });
+
+function saveMonth(){
+  const entry={
+    month:selMonth, year:selYear,
+    ua:document.getElementById('f-ua').value,
+    un:document.getElementById('f-un').value,
+    uf:document.getElementById('f-uf').value,
+    ing:document.getElementById('f-ing').value,
+    asi:document.getElementById('f-asi').value,
+    sat:document.getElementById('f-sat').value,
+    notas:document.getElementById('f-notas').value
+  };
+  history=history.filter(h=>!(h.month===selMonth&&h.year===selYear));
+  history.push(entry);
+  history.sort((a,b)=>a.year!==b.year?a.year-b.year:a.month-b.month);
+  save();
+  const btn=document.getElementById('save-btn');
+  btn.textContent='✓ GUARDADO'; btn.classList.add('saved');
+  setTimeout(()=>{ btn.textContent='GUARDAR MES'; btn.classList.remove('saved'); },2000);
+}
+
+function renderHistory(){
+  const list=document.getElementById('history-list');
+  if(history.length===0){
+    list.innerHTML=`<div style="text-align:center;padding:40px;color:#475569;background:#0f172a;border-radius:16px;"><div style="font-size:28px;margin-bottom:8px;">📋</div><div>Sin registros históricos aún</div></div>`;
+    return;
+  }
+  list.innerHTML=[...history].reverse().map(h=>{
+    const ret=calcRet(h), des=calcDes(h), ing=parseFloat(h.ing)||0;
+    const cols=[
+      {label:'Usuarios',val:h.ua||'—',meta:METAS.ua,inv:false},
+      {label:'Ingresos',val:ing>0?`$${(ing/1e6).toFixed(1)}M`:'—',meta:null},
+      {label:'Asistencia',val:h.asi?`${h.asi}/s`:'—',meta:null},
+      {label:'Satisfacción',val:h.sat?`${h.sat}%`:'—',meta:null},
+      {label:'Retención',val:`${ret}%`,meta:METAS.ret,inv:false},
+      {label:'Deserción',val:`${des}%`,meta:METAS.des,inv:true},
+    ];
+    const cells=cols.map(({label,val,meta,inv})=>{
+      const num=parseFloat(val)||0;
+      const sc=meta?statusColor(num,meta,inv):'#94a3b8';
+      return `<div style="text-align:center;"><div style="font-size:8px;color:#475569;letter-spacing:0.5px;margin-bottom:2px;">${label.toUpperCase()}</div><div style="font-size:13px;font-weight:800;color:${sc};">${val}</div></div>`;
+    }).join('');
+    return `<div style="background:#0f172a;border:1px solid #1e293b;border-radius:14px;padding:14px 16px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-weight:800;color:white;font-size:13px;">${MONTHS[h.month]} ${h.year}</span>
+        <button onclick="selMonth=${h.month};selYear=${h.year};document.getElementById('year-sel').value=${h.year};showView('register');" style="background:#1e293b;border:none;color:#64748b;border-radius:6px;padding:3px 10px;font-size:9px;cursor:pointer;font-family:'DM Mono',monospace;">EDITAR</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;">${cells}</div>
+      ${h.notas?`<div style="margin-top:8px;font-size:10px;color:#475569;border-top:1px solid #1e293b;padding-top:8px;">${h.notas}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function showView(v){
+  ['dashboard','register','history'].forEach(id=>{
+    const el=document.getElementById(`view-${id}`);
+    el.style.display=id===v?'block':'none';
+    if(id===v){ el.classList.remove('fade-in'); void el.offsetWidth; el.classList.add('fade-in'); }
+  });
+  document.querySelectorAll('.btn-tab').forEach((btn,i)=>{
+    const ids=['dashboard','register','history'];
+    btn.classList.toggle('active', ids[i]===v);
+  });
+  if(v==='dashboard') renderDashboard();
+  if(v==='register'){ renderMonthBtns(); loadForm(); }
+  if(v==='history') renderHistory();
+}
+
+// Init
+renderMonthBtns();
+renderDashboard();
+document.getElementById('view-register').style.display='none';
+document.getElementById('view-history').style.display='none';
+</script>
+</body>
+</html>
